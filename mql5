@@ -1,0 +1,120 @@
+
+// WTCVolumeProfile - Forex Market Analysis Tool
+// Developer's Site: forexroboteasy.com
+// Development: Forex Robot Easy Team
+
+// Include necessary libraries
+#include <Trade\Trade.mqh>
+#include <ChartObjects\ChartObjects.mqh>
+
+// Define constants
+#define SYMBOL 'EURUSD'
+#define TIMEFRAME PERIOD_H1
+
+// Define global variables
+CTrade trade;
+CChartObject label;
+
+// Initialize the trading robot
+int OnInit()
+{
+   // Set up the trade object
+   trade.SetExpertMagicNumber(123456);
+   trade.SetExpertComment('WTCVolumeProfile');
+
+   // Create a label for displaying volume distribution
+   label.Create(0, 'VolumeProfile', 0, 0);
+   label.SetPosition(5, 50);
+   label.SetFont('Arial', 10);
+   label.SetColor(Color.Blue);
+   
+   // Subscribe to necessary symbol and timeframe
+   SymbolInfoTick(SYMBOL);
+   ChartApplyTemplate(0, 'VolumeProfile.tpl');
+   
+   return(INIT_SUCCEEDED);
+}
+
+// Analyze volume data and generate volume profiles
+void AnalyzeVolumeProfiles()
+{
+   // Retrieve volume data from the Forex market
+   double volumes[];
+   CopyTimes(SYMBOL, TIMEFRAME, 0, ArraySize(volumes), volumes);
+   
+   // Generate volume profiles for different currency pairs
+   double profile[];
+   ArrayResize(profile, ArraySize(volumes));
+   
+   // Calculate volume distribution information
+   double maxVolume = ArrayMaximum(volumes);
+   double minVolume = ArrayMinimum(volumes);
+   double avgVolume = ArrayAverage(volumes);
+   
+   // Display volume distribution information in a clear and concise manner
+   string distributionInfo = 'Max Volume: ' + DoubleToString(maxVolume, 2) +
+                             ', Min Volume: ' + DoubleToString(minVolume, 2) +
+                             ', Avg Volume: ' + DoubleToString(avgVolume, 2);
+   label.SetText(distributionInfo);
+   
+   // Customize volume profile settings based on user preferences
+   int customSetting = 1; // Example setting
+   
+   // Provide real-time updates of volume profiles as market conditions change
+   while(!IsStopped())
+   {
+      // Retrieve latest volume data
+      CopyTimes(SYMBOL, TIMEFRAME, 0, ArraySize(volumes), volumes);
+      
+      // Update volume profiles based on latest data
+      for(int i = 0; i < ArraySize(volumes); i++)
+      {
+         // Update volume profile calculation based on custom setting
+         profile[i] = volumes[i] * customSetting;
+      }
+      
+      // Overlay volume profiles on price charts for better analysis
+      ChartIndicatorAdd(0, IND_VOLUME_PROFILE);
+      ChartIndicatorSetInteger(0, 0, IND_PARAM_PROFILE, ArraySize(volumes));
+      ChartIndicatorSetDouble(0, 0, IND_PARAM_PRICE_STEP, SymbolInfoDouble(SYMBOL, SYMBOL_TRADE_TICK_SIZE));
+      ChartIndicatorSetInteger(0, 0, IND_PARAM_VOLUME_TYPE, 0);
+      
+      // Identify key support and resistance levels based on volume data
+      double supportLevel = minVolume;
+      double resistanceLevel = maxVolume;
+      
+      // Perform trading strategies to enhance effectiveness of the tool
+      if (customSetting == 1)
+      {
+         trade.Buy();
+      }
+      else if (customSetting == -1)
+      {
+         trade.Sell();
+      }
+      
+      // Sleep for specified time before updating again
+      Sleep(5000);
+   }
+}
+
+// Clean up resources and exit the trading robot
+void OnDeinit(const int reason)
+{
+   // Remove the label from the chart
+   label.Delete();
+   
+   // Close any open positions
+   trade.CloseAll();
+   
+   // Unsubscribe from the symbol and timeframe
+   SymbolInfoTick(SYMBOL, false);
+   ChartApplyTemplate(0, '');
+}
+
+// Entry point of the trading robot
+void OnTick()
+{
+   // Call the function to analyze volume profiles
+   AnalyzeVolumeProfiles();
+}
